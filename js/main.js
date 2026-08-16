@@ -12,7 +12,7 @@
      ============================================================ */
   var PRODUCTS = {
     elitecleaner: { name: 'EliteCleaner',              price: 9.99 },
-    ekitemacro:   { name: 'ekitemacro',                price: 9.99 },
+    ekitemacro:   { name: 'elitemacro',                price: 9.99 },
     elitetweak:   { name: 'EliteTweak (FPS Booster)',  price: 9.99 }
   };
   var DISCORD_WEBHOOK_URL = 'https://discord.com/api/webhooks/1538406455491825775/U7-YIr5XOk2LOdsGswgFFdfGRlPtPu6pL4KvAmAV2lNvRciKAbmKUJOuySBtcK15rep1';
