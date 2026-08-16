@@ -3,17 +3,19 @@
   'use strict';
 
   /* ============================================================
-     CHECKOUT LINKS (Sellix on-site modal)
-     Paste your Sellix product IDs below, e.g. "AbC123XyZ"
-     (find them in Sellix Dashboard -> Products -> product ID)
-     When an ID is filled in, the Buy button opens Sellix's
-     payment modal directly on this page — no redirect.
+     STORE CONFIG
+     1. PRODUCTS: name + unit price per product key
+     2. DISCORD_WEBHOOK_URL: paste your Discord webhook URL here
+        (Discord -> Server Settings -> Integrations -> Webhooks
+         -> New Webhook -> Copy Webhook URL)
+        Every order is posted there and pings the channel.
      ============================================================ */
-  var SELLIX_PRODUCT_IDS = {
-    elitecleaner: '',
-    icarus: '',
-    elitetweak: ''
+  var PRODUCTS = {
+    elitecleaner: { name: 'EliteCleaner',              price: 9.99 },
+    icarus:       { name: 'Icarus Macro Maker',        price: 14.99 },
+    elitetweak:   { name: 'EliteTweak (FPS Booster)',  price: 9.99 }
   };
+  var DISCORD_WEBHOOK_URL = '';
 
   var navToggle = document.getElementById('navToggle');
   var navLinks = document.getElementById('navLinks');
@@ -43,22 +45,108 @@
     }, 3200);
   }
 
+  var modal = document.getElementById('checkoutModal');
+  var modalTitle = document.getElementById('modalTitle');
+  var modalUnit = document.getElementById('modalUnit');
+  var modalTotal = document.getElementById('modalTotal');
+  var qtyInput = document.getElementById('qtyInput');
+  var qtyMinus = document.getElementById('qtyMinus');
+  var qtyPlus = document.getElementById('qtyPlus');
+  var modalBuy = document.getElementById('modalBuy');
+  var modalBackdrop = document.getElementById('modalBackdrop');
+  var modalClose = document.getElementById('modalClose');
+
+  var currentProduct = null;
+
+  function fmt(n) { return '$' + n.toFixed(2); }
+
+  function updateTotal() {
+    if (!currentProduct) return;
+    var qty = Math.max(1, Math.min(99, parseInt(qtyInput.value, 10) || 1));
+    qtyInput.value = qty;
+    modalTotal.textContent = fmt(currentProduct.price * qty);
+  }
+
+  function openModal(key) {
+    currentProduct = PRODUCTS[key];
+    if (!currentProduct) return;
+    modalTitle.textContent = currentProduct.name;
+    modalUnit.textContent = fmt(currentProduct.price);
+    qtyInput.value = 1;
+    updateTotal();
+    modal.classList.add('open');
+    modal.setAttribute('aria-hidden', 'false');
+  }
+
+  function closeModal() {
+    modal.classList.remove('open');
+    modal.setAttribute('aria-hidden', 'true');
+  }
+
   document.querySelectorAll('.buy-btn').forEach(function (btn) {
-    var key = btn.getAttribute('data-checkout') || '';
-    var productId = (SELLIX_PRODUCT_IDS[key] || '').trim();
+    btn.addEventListener('click', function () {
+      openModal(btn.getAttribute('data-checkout'));
+    });
+  });
 
-    if (productId) {
-      btn.setAttribute('data-sellix-product-id', productId);
-      btn.setAttribute('data-sellix-custom-total', 'true');
-      btn.classList.add('sellix-checkout');
+  qtyMinus.addEventListener('click', function () {
+    qtyInput.value = Math.max(1, parseInt(qtyInput.value, 10) - 1);
+    updateTotal();
+  });
+  qtyPlus.addEventListener('click', function () {
+    qtyInput.value = Math.min(99, parseInt(qtyInput.value, 10) + 1);
+    updateTotal();
+  });
+  qtyInput.addEventListener('input', updateTotal);
+  modalClose.addEventListener('click', closeModal);
+  modalBackdrop.addEventListener('click', closeModal);
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape') closeModal();
+  });
+
+  modalBuy.addEventListener('click', function () {
+    if (!currentProduct) return;
+    if (!DISCORD_WEBHOOK_URL || DISCORD_WEBHOOK_URL.indexOf('PASTE') !== -1) {
+      showToast('Discord webhook not configured — paste it in js/main.js');
+      return;
     }
+    var qty = Math.max(1, Math.min(99, parseInt(qtyInput.value, 10) || 1));
+    var total = currentProduct.price * qty;
 
-    btn.addEventListener('click', function (e) {
-      if (!productId) {
-        e.preventDefault();
-        e.stopImmediatePropagation();
-        showToast('Checkout not configured yet — paste your Sellix product ID in js/main.js');
+    var payload = {
+      username: 'ELITE SHOPS Store',
+      embeds: [{
+        title: '🛒 New purchase request',
+        color: 11141290,
+        fields: [
+          { name: 'Product', value: currentProduct.name, inline: true },
+          { name: 'Quantity', value: String(qty), inline: true },
+          { name: 'Total', value: fmt(total), inline: true }
+        ],
+        timestamp: new Date().toISOString()
+      }]
+    };
+
+    modalBuy.disabled = true;
+    modalBuy.textContent = 'Sending...';
+
+    fetch(DISCORD_WEBHOOK_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    }).then(function (res) {
+      modalBuy.disabled = false;
+      modalBuy.textContent = 'Buy';
+      if (res.ok) {
+        closeModal();
+        showToast('🎉 Order sent! We will contact you shortly.');
+      } else {
+        showToast('Delivery failed (HTTP ' + res.status + ') — try again or contact us');
       }
+    }).catch(function () {
+      modalBuy.disabled = false;
+      modalBuy.textContent = 'Buy';
+      showToast('Could not send the order — check your connection');
     });
   });
 
