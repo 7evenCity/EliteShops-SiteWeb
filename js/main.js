@@ -2,6 +2,19 @@
 (function () {
   'use strict';
 
+  /* ============================================================
+     CHECKOUT LINKS (Sellix on-site modal)
+     Paste your Sellix product IDs below, e.g. "AbC123XyZ"
+     (find them in Sellix Dashboard -> Products -> product ID)
+     When an ID is filled in, the Buy button opens Sellix's
+     payment modal directly on this page — no redirect.
+     ============================================================ */
+  var SELLIX_PRODUCT_IDS = {
+    elitecleaner: '',
+    icarus: '',
+    elitetweak: ''
+  };
+
   var navToggle = document.getElementById('navToggle');
   var navLinks = document.getElementById('navLinks');
 
@@ -31,8 +44,21 @@
   }
 
   document.querySelectorAll('.buy-btn').forEach(function (btn) {
-    btn.addEventListener('click', function () {
-      showToast('Checkout coming soon — join the Discord for early access!');
+    var key = btn.getAttribute('data-checkout') || '';
+    var productId = (SELLIX_PRODUCT_IDS[key] || '').trim();
+
+    if (productId) {
+      btn.setAttribute('data-sellix-product-id', productId);
+      btn.setAttribute('data-sellix-custom-total', 'true');
+      btn.classList.add('sellix-checkout');
+    }
+
+    btn.addEventListener('click', function (e) {
+      if (!productId) {
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        showToast('Checkout not configured yet — paste your Sellix product ID in js/main.js');
+      }
     });
   });
 
