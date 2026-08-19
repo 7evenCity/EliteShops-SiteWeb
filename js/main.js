@@ -15,7 +15,7 @@
     ekitemacro:   { name: 'elitemacro',                price: 9.99 },
     elitetweak:   { name: 'EliteTweak (FPS Booster)',  price: 9.99 }
   };
-  var DISCORD_WEBHOOK_URL = 'https://discord.com/api/webhooks/1538406455491825775/U7-YIr5XOk2LOdsGswgFFdfGRlPtPu6pL4KvAmAV2lNvRciKAbmKUJOuySBtcK15rep1';
+  var DISCORD_WEBHOOK_URL = 'https://discord.com/api/webhooks/1539437794999402578/Sjkz0mWV7CIqK4YHlWMAcfj7B9poP_BGegVUuj9n49NHPhPOFL0QXrGZAKbl9KdeHtp4';
   var DISCORD_INVITE_URL = 'https://discord.gg/fV3rzcsc5K';
 
   var navToggle = document.getElementById('navToggle');
